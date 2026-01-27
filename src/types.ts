@@ -78,6 +78,7 @@ export interface NotificationInput {
 export interface StopInput {
   session_id: string
   reason: string
+  cwd?: string
   stop_hook_active?: boolean
   transcript_path?: string
 }

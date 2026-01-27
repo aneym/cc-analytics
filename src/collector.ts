@@ -305,6 +305,7 @@ async function handleStop(input: StopInput, config: PluginConfig): Promise<void>
 
   const usageProperties: Record<string, unknown> = {
     session_id: sessionId,
+    project_name: input.cwd ? basename(input.cwd) : null,
     turn_index: turnData.turnIndex,
     model: turnData.model,
     input_tokens: turnData.usage.input_tokens,
