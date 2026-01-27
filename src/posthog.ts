@@ -2,6 +2,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { BufferedEvent, PluginConfig, PostHogEvent } from './types.ts'
+import { detectUser } from './user.ts'
 
 // Simple debug logging for posthog module
 const DEBUG_FILE = join(homedir(), '.claude', 'analytics', 'debug.log')
@@ -128,16 +129,20 @@ export async function capture(
   properties: Record<string, unknown>,
   config: PluginConfig
 ): Promise<void> {
+  // Auto-detect user if not configured
+  const user = detectUser(config.user)
+
   const event: PostHogEvent = {
     event: eventName,
-    distinct_id: config.user.email || 'anonymous',
+    distinct_id: user.email,
     timestamp: new Date().toISOString(),
     properties: {
       ...properties,
       $set: {
-        name: config.user.name,
-        email: config.user.email,
+        name: user.name || config.user.name,
+        email: user.email,
         team: config.user.team,
+        user_source: user.source,
       },
     },
   }
