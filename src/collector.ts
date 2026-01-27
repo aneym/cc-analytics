@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { existsSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { debugLog } from './debug.ts'
 import { capture } from './posthog.ts'
@@ -12,6 +12,7 @@ import {
   sanitizeToolInput,
   truncateText,
 } from './sanitizer.ts'
+import { getSubscriptionInfo } from './subscription.ts'
 import type {
   HookEvent,
   HookInput,
@@ -52,6 +53,7 @@ const DEFAULT_CONFIG: PluginConfig = {
     prompts: false,
     subagents: true,
     usage: true,
+    subscription: true,
   },
   privacy: {
     hashFilePaths: true,
@@ -102,15 +104,21 @@ function getHookEvent(input?: { hook_event_name?: string }): HookEvent {
 }
 
 async function handleSetup(input: SetupInput, config: PluginConfig): Promise<void> {
-  await capture(
-    'cc_setup',
-    {
-      session_id: input.session_id,
-      project_path_hash: input.cwd,
-      trigger: input.trigger,
-    },
-    config
-  )
+  const properties: Record<string, unknown> = {
+    session_id: input.session_id,
+    project_name: basename(input.cwd),
+    trigger: input.trigger,
+  }
+
+  // Add subscription info if enabled
+  if (config.tracking.subscription) {
+    const subInfo = getSubscriptionInfo(config.debug)
+    if (subInfo.subscriptionType) properties.subscription_type = subInfo.subscriptionType
+    if (subInfo.accountUUID) properties.account_uuid = subInfo.accountUUID
+    if (subInfo.organizationUUID) properties.organization_uuid = subInfo.organizationUUID
+  }
+
+  await capture('cc_setup', properties, config)
 }
 
 async function handleSessionStart(input: SessionStartInput, config: PluginConfig): Promise<void> {
@@ -118,21 +126,27 @@ async function handleSessionStart(input: SessionStartInput, config: PluginConfig
     'cc_session_start',
     {
       session_id: input.session_id,
-      project_path_hash: input.cwd,
+      project_name: basename(input.cwd),
     },
     config
   )
 }
 
 async function handleSessionEnd(input: SessionEndInput, config: PluginConfig): Promise<void> {
-  await capture(
-    'cc_session_end',
-    {
-      session_id: input.session_id,
-      duration_ms: input.duration_ms,
-    },
-    config
-  )
+  const properties: Record<string, unknown> = {
+    session_id: input.session_id,
+    duration_ms: input.duration_ms,
+  }
+
+  // Add subscription info if enabled
+  if (config.tracking.subscription) {
+    const subInfo = getSubscriptionInfo(config.debug)
+    if (subInfo.subscriptionType) properties.subscription_type = subInfo.subscriptionType
+    if (subInfo.accountUUID) properties.account_uuid = subInfo.accountUUID
+    if (subInfo.organizationUUID) properties.organization_uuid = subInfo.organizationUUID
+  }
+
+  await capture('cc_session_end', properties, config)
 }
 
 async function handlePrompt(input: UserPromptSubmitInput, config: PluginConfig): Promise<void> {
@@ -289,24 +303,30 @@ async function handleStop(input: StopInput, config: PluginConfig): Promise<void>
 
   const cost = calculateCost(turnData.usage, turnData.model)
 
-  await capture(
-    'cc_turn_usage',
-    {
-      session_id: sessionId,
-      turn_index: turnData.turnIndex,
-      model: turnData.model,
-      input_tokens: turnData.usage.input_tokens,
-      output_tokens: turnData.usage.output_tokens,
-      cache_creation_tokens: turnData.usage.cache_creation_input_tokens,
-      cache_read_tokens: turnData.usage.cache_read_input_tokens,
-      input_cost_usd: cost.input_cost,
-      output_cost_usd: cost.output_cost,
-      cache_creation_cost_usd: cost.cache_creation_cost,
-      cache_read_cost_usd: cost.cache_read_cost,
-      total_cost_usd: cost.total_cost,
-    },
-    config
-  )
+  const usageProperties: Record<string, unknown> = {
+    session_id: sessionId,
+    turn_index: turnData.turnIndex,
+    model: turnData.model,
+    input_tokens: turnData.usage.input_tokens,
+    output_tokens: turnData.usage.output_tokens,
+    cache_creation_tokens: turnData.usage.cache_creation_input_tokens,
+    cache_read_tokens: turnData.usage.cache_read_input_tokens,
+    input_cost_usd: cost.input_cost,
+    output_cost_usd: cost.output_cost,
+    cache_creation_cost_usd: cost.cache_creation_cost,
+    cache_read_cost_usd: cost.cache_read_cost,
+    total_cost_usd: cost.total_cost,
+  }
+
+  // Add subscription info if enabled
+  if (config.tracking.subscription) {
+    const subInfo = getSubscriptionInfo(config.debug)
+    if (subInfo.subscriptionType) usageProperties.subscription_type = subInfo.subscriptionType
+    if (subInfo.accountUUID) usageProperties.account_uuid = subInfo.accountUUID
+    if (subInfo.organizationUUID) usageProperties.organization_uuid = subInfo.organizationUUID
+  }
+
+  await capture('cc_turn_usage', usageProperties, config)
 }
 
 async function handlePreCompact(input: PreCompactInput, config: PluginConfig): Promise<void> {

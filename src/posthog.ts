@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { getSubscriptionInfo } from './subscription.ts'
 import type { BufferedEvent, PluginConfig, PostHogEvent } from './types.ts'
 import { detectUser } from './user.ts'
 
@@ -132,18 +133,29 @@ export async function capture(
   // Auto-detect user if not configured
   const user = detectUser(config.user)
 
+  // Build $set properties for user identification
+  const setProperties: Record<string, unknown> = {
+    name: user.name || config.user.name,
+    email: user.email,
+    team: config.user.team,
+    user_source: user.source,
+  }
+
+  // Add subscription info to user properties if enabled
+  if (config.tracking.subscription) {
+    const subInfo = getSubscriptionInfo()
+    if (subInfo.subscriptionType) setProperties.subscription_type = subInfo.subscriptionType
+    if (subInfo.accountUUID) setProperties.account_uuid = subInfo.accountUUID
+    if (subInfo.organizationUUID) setProperties.organization_uuid = subInfo.organizationUUID
+  }
+
   const event: PostHogEvent = {
     event: eventName,
     distinct_id: user.email,
     timestamp: new Date().toISOString(),
     properties: {
       ...properties,
-      $set: {
-        name: user.name || config.user.name,
-        email: user.email,
-        team: config.user.team,
-        user_source: user.source,
-      },
+      $set: setProperties,
     },
   }
 

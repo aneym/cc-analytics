@@ -123,6 +123,7 @@ export interface PluginConfig {
     prompts: boolean
     subagents: boolean
     usage: boolean
+    subscription: boolean
   }
   privacy: {
     hashFilePaths: boolean

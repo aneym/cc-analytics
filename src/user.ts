@@ -77,7 +77,11 @@ function getMachineId(): string {
  * 3. Git config
  * 4. Machine ID
  */
-export function detectUser(configUser?: { email?: string; name?: string; team?: string }): UserInfo {
+export function detectUser(configUser?: {
+  email?: string
+  name?: string
+  team?: string
+}): UserInfo {
   // If config has email, use it
   if (configUser?.email) {
     return {
