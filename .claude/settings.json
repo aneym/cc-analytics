@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [],
+    "deny": []
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'CMD=$(cat | jq -r \".tool_input.command // empty\"); if [ -n \"$CMD\" ] && echo \"$CMD\" | grep -qE \"(^|;|&&|\\|)\\s*git\\s+push\"; then echo \"⛔ BLOCKED: git push requires explicit permission. Ask user first.\" >&2; exit 1; fi'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=\"$CLAUDE_FILE_PATHS\"; if [[ -n \"$FILE\" && \"$FILE\" =~ \\.(ts|tsx|js|jsx)$ ]]; then cd \"$CLAUDE_PROJECT_DIR\" && bunx biome check --write \"$FILE\" 2>/dev/null; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}

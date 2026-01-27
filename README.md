@@ -1,8 +1,8 @@
 # Claude Code Analytics
 
-A Claude Code plugin that tracks comprehensive usage analytics and sends to PostHog. Shareable across teams.
+Track Claude Code usage with PostHog. See what tools your team uses, how long sessions last, which skills get invoked, and more.
 
-## What It Tracks
+## What's Tracked
 
 | Event | Description |
 |-------|-------------|
@@ -11,27 +11,38 @@ A Claude Code plugin that tracks comprehensive usage analytics and sends to Post
 | `cc_mcp_call` | MCP tool invocations by server |
 | `cc_skill_invoke` | Skill usage and arguments |
 | `cc_subagent` | Subagent spawning and completion |
-| `cc_prompt` | User prompt patterns (opt-in) |
 | `cc_hook_execute` | Hook execution timing |
 
 ## Installation
 
-```bash
-# Clone to your plugins directory
-git clone git@github.com:aneym/claude-code-analytics.git ~/.claude/plugins/claude-code-analytics
+### Option 1: Via Marketplace (Recommended)
 
-# Install dependencies
+```
+/plugin marketplace add aneym/claude-code-analytics
+/plugin install claude-code-analytics
+```
+
+Then run setup:
+
+```
+/claude-code-analytics:setup
+```
+
+Restart Claude Code to activate hooks.
+
+### Option 2: Manual Clone
+
+```bash
+git clone git@github.com:aneym/claude-code-analytics.git ~/.claude/plugins/claude-code-analytics
 cd ~/.claude/plugins/claude-code-analytics
 bun install
-
-# Create your config
 cp config.template.json config.json
-# Edit config.json with your PostHog API key and email
+# Edit config.json with your PostHog API key
 ```
 
 ## Configuration
 
-Edit `config.json`:
+Edit `config.json` (created by setup or manually):
 
 ```json
 {
@@ -65,38 +76,43 @@ Edit `config.json`:
 
 By default, the plugin protects sensitive data:
 
-- **File paths**: SHA256 hashed (first 16 chars)
-- **Bash commands**: Only command name captured (e.g., `git`, `npm`)
-- **Prompts**: Opt-in, truncated to 100 chars
-- **File contents**: Never captured
+| Setting | Default | Effect |
+|---------|---------|--------|
+| `hashFilePaths` | `true` | SHA256 hash instead of full path |
+| `sanitizeCommands` | `true` | First word only (git, npm, curl) |
+| `truncatePrompts` | `100` | Max chars if prompt tracking enabled |
+| `tracking.prompts` | `false` | Prompt content NOT tracked by default |
 
-## Usage
+**File contents are never captured.**
 
-Once configured, the plugin automatically tracks all Claude Code activity. Events are buffered locally and sent to PostHog in batches.
+## Skills
 
-### View Local Stats
+| Skill | Description |
+|-------|-------------|
+| `/claude-code-analytics:setup` | Configure API key and user details |
+| `/claude-code-analytics:dashboard` | View analytics summary |
 
-Use the dashboard skill:
+## Updating
+
+Marketplace handles auto-updates. To manually update:
 
 ```
-/analytics:dashboard
+/plugin marketplace update
 ```
-
-### Buffer Location
-
-Events are buffered at `~/.claude/analytics/buffer.jsonl` before being sent to PostHog.
 
 ## Development
 
 ```bash
-# Lint and format
-bun run lint:fix
+# Clone for development
+git clone git@github.com:aneym/claude-code-analytics.git
+cd claude-code-analytics
+bun install
 
-# Type check
-bun run typecheck
-
-# Run all checks
+# Lint & typecheck
 bun run check
+
+# Test locally (without installing)
+claude --plugin-dir .
 ```
 
 ## PostHog Dashboards
