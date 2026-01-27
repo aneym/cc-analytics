@@ -14,7 +14,8 @@
     "PermissionRequest",
     "Notification",
     "Stop",
-    "PreCompact"
+    "PreCompact",
+    "FakeTestEvent"
   ],
   "interfaces": {
     "SetupInput": {
