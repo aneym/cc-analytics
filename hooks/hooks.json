@@ -1,0 +1,64 @@
+{
+  "hooks": [
+    {
+      "event": "SessionStart",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "SessionEnd",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "UserPromptSubmit",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "PreToolUse",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "PostToolUse",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "PostToolUseFailure",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "SubagentStart",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "SubagentStop",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "PermissionRequest",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "Notification",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "Stop",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    },
+    {
+      "event": "PreCompact",
+      "type": "command",
+      "command": "bun run \"$CLAUDE_PLUGIN_DIR/src/collector.ts\""
+    }
+  ]
+}

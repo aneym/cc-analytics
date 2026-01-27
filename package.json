@@ -1,0 +1,25 @@
+{
+  "name": "claude-code-analytics",
+  "version": "1.0.0",
+  "description": "Track Claude Code usage: tools, hooks, skills, sessions. Sends to PostHog.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run typecheck && bun run lint"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.13",
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aneym/claude-code-analytics"
+  },
+  "author": "aneym",
+  "license": "MIT"
+}

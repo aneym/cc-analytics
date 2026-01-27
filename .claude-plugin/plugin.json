@@ -1,0 +1,17 @@
+{
+  "name": "claude-code-analytics",
+  "version": "1.0.0",
+  "description": "Track Claude Code usage: tools, hooks, skills, sessions. Sends to PostHog for team-wide analytics.",
+  "author": {
+    "name": "aneym",
+    "github": "aneym"
+  },
+  "keywords": ["analytics", "telemetry", "posthog", "usage-tracking"],
+  "hooks": "./hooks/hooks.json",
+  "skills": "./skills",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aneym/claude-code-analytics"
+  },
+  "license": "MIT"
+}

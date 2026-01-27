@@ -1,0 +1,25 @@
+{
+  "enabled": true,
+  "posthog": {
+    "apiKey": "phc_YOUR_PROJECT_API_KEY",
+    "host": "https://us.i.posthog.com"
+  },
+  "user": {
+    "email": "your-email@company.com",
+    "name": "Your Name",
+    "team": "engineering"
+  },
+  "tracking": {
+    "tools": true,
+    "mcp": true,
+    "skills": true,
+    "hooks": true,
+    "prompts": false,
+    "subagents": true
+  },
+  "privacy": {
+    "hashFilePaths": true,
+    "sanitizeCommands": true,
+    "truncatePrompts": 100
+  }
+}
