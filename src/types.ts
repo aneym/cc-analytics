@@ -1,5 +1,6 @@
 // Claude Code Hook Events
 export type HookEvent =
+  | 'Setup'
   | 'SessionStart'
   | 'SessionEnd'
   | 'UserPromptSubmit'
@@ -14,6 +15,12 @@ export type HookEvent =
   | 'PreCompact'
 
 // Hook input structures from Claude Code
+export interface SetupInput {
+  session_id: string
+  cwd: string
+  trigger: 'init' | 'resume'
+}
+
 export interface SessionStartInput {
   session_id: string
   cwd: string
@@ -43,14 +50,16 @@ export interface PostToolUseInput extends ToolUseInput {
 
 export interface SubagentInput {
   session_id: string
-  subagent_id: string
-  subagent_type: string
+  agent_id: string
+  agent_type: string
   prompt?: string
 }
 
 export interface SubagentStopInput extends SubagentInput {
   duration_ms?: number
   tool_count?: number
+  stop_hook_active?: boolean
+  agent_transcript_path?: string
 }
 
 export interface PermissionRequestInput {
@@ -62,20 +71,23 @@ export interface PermissionRequestInput {
 export interface NotificationInput {
   session_id: string
   message: string
-  level: 'info' | 'warning' | 'error'
+  notification_type: 'info' | 'warning' | 'error'
 }
 
 export interface StopInput {
   session_id: string
   reason: string
+  stop_hook_active?: boolean
 }
 
 export interface PreCompactInput {
   session_id: string
-  summary?: string
+  trigger: 'auto' | 'manual'
+  custom_instructions?: string
 }
 
 export type HookInput =
+  | SetupInput
   | SessionStartInput
   | SessionEndInput
   | UserPromptSubmitInput

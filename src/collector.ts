@@ -15,11 +15,13 @@ import type {
   HookEvent,
   HookInput,
   NotificationInput,
+  PermissionRequestInput,
   PluginConfig,
   PostToolUseInput,
   PreCompactInput,
   SessionEndInput,
   SessionStartInput,
+  SetupInput,
   StopInput,
   SubagentInput,
   SubagentStopInput,
@@ -78,6 +80,18 @@ async function readStdin(): Promise<string> {
 
 function getHookEvent(): HookEvent {
   return (process.env.CLAUDE_HOOK_EVENT as HookEvent) || 'PreToolUse'
+}
+
+async function handleSetup(input: SetupInput, config: PluginConfig): Promise<void> {
+  await capture(
+    'cc_setup',
+    {
+      session_id: input.session_id,
+      project_path_hash: input.cwd,
+      trigger: input.trigger,
+    },
+    config
+  )
 }
 
 async function handleSessionStart(input: SessionStartInput, config: PluginConfig): Promise<void> {
