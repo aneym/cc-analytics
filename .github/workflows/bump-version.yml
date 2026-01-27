@@ -1,0 +1,38 @@
+name: Bump Version
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '.claude-plugin/plugin.json'  # Avoid infinite loop
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MARKETPLACE_PAT }}
+
+      - name: Bump patch version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Read current version
+          CURRENT=$(jq -r '.version' .claude-plugin/plugin.json)
+          echo "Current version: $CURRENT"
+
+          # Bump patch version
+          IFS='.' read -r major minor patch <<< "$CURRENT"
+          NEW_VERSION="$major.$minor.$((patch + 1))"
+          echo "New version: $NEW_VERSION"
+
+          # Update plugin.json
+          jq --arg v "$NEW_VERSION" '.version = $v' .claude-plugin/plugin.json > tmp.json
+          mv tmp.json .claude-plugin/plugin.json
+
+          # Commit and push
+          git add .claude-plugin/plugin.json
+          git commit -m "chore: Bump version to $NEW_VERSION [skip ci]"
+          git push
