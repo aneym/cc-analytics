@@ -1,7 +1,15 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { BufferedEvent, PluginConfig, PostHogEvent } from './types.ts'
+
+// Simple debug logging for posthog module
+const DEBUG_FILE = join(homedir(), '.claude', 'analytics', 'debug.log')
+function posthogDebug(msg: string): void {
+  try {
+    appendFileSync(DEBUG_FILE, `[${new Date().toISOString()}] [posthog] ${msg}\n`)
+  } catch {}
+}
 
 const BUFFER_DIR = join(homedir(), '.claude', 'analytics')
 const BUFFER_FILE = join(BUFFER_DIR, 'buffer.jsonl')
@@ -20,6 +28,7 @@ function ensureBufferDir(): void {
  * Append event to local buffer
  */
 function bufferEvent(event: PostHogEvent): void {
+  posthogDebug(`bufferEvent called: ${event.event}`)
   ensureBufferDir()
   const buffered: BufferedEvent = {
     ...event,
@@ -30,8 +39,10 @@ function bufferEvent(event: PostHogEvent): void {
   if (existsSync(BUFFER_FILE)) {
     const existing = readFileSync(BUFFER_FILE, 'utf8')
     writeFileSync(BUFFER_FILE, existing + line)
+    posthogDebug(`bufferEvent written: ${event.event}`)
   } else {
     writeFileSync(BUFFER_FILE, line)
+    posthogDebug(`bufferEvent created: ${event.event}`)
   }
 }
 

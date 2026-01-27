@@ -91,8 +91,14 @@ async function readStdin(): Promise<string> {
   return Buffer.concat(chunks).toString('utf8')
 }
 
-function getHookEvent(): HookEvent {
-  return (process.env.CLAUDE_HOOK_EVENT as HookEvent) || 'PreToolUse'
+function getHookEvent(input?: { hook_event_name?: string }): HookEvent {
+  // Prefer hook_event_name from stdin payload (Claude Code's newer format)
+  // Fall back to CLAUDE_HOOK_EVENT env var for backward compatibility
+  return (
+    (input?.hook_event_name as HookEvent) ||
+    (process.env.CLAUDE_HOOK_EVENT as HookEvent) ||
+    'PreToolUse'
+  )
 }
 
 async function handleSetup(input: SetupInput, config: PluginConfig): Promise<void> {
@@ -216,6 +222,9 @@ async function handlePermissionRequest(
 }
 
 async function handleSubagentStart(input: SubagentInput, config: PluginConfig): Promise<void> {
+  if (config.debug) {
+    debugLog('[handleSubagentStart] Called', { agent_id: input.agent_id })
+  }
   if (!config.tracking.subagents) return
 
   await capture(
@@ -223,7 +232,7 @@ async function handleSubagentStart(input: SubagentInput, config: PluginConfig): 
     {
       session_id: input.session_id,
       agent_id: input.agent_id,
-      agent_type: input.agent_type,
+      agent_type: input.agent_type || 'unknown',
       phase: 'start',
     },
     config
@@ -238,11 +247,9 @@ async function handleSubagentStop(input: SubagentStopInput, config: PluginConfig
     {
       session_id: input.session_id,
       agent_id: input.agent_id,
-      agent_type: input.agent_type,
       phase: 'stop',
-      duration_ms: input.duration_ms,
-      tool_count: input.tool_count,
       stop_hook_active: input.stop_hook_active,
+      // Note: agent_type, duration_ms, tool_count not sent by Claude Code
     },
     config
   )
@@ -344,18 +351,18 @@ async function main(): Promise<void> {
 
   try {
     const stdin = await readStdin()
-    const event = getHookEvent()
-
-    // Debug logging for raw hook input
-    if (config.debug) {
-      debugLog(`[${event}] Raw stdin`, stdin.trim() ? JSON.parse(stdin) : '(empty)')
-    }
 
     if (!stdin.trim()) {
       process.exit(0)
     }
 
-    const input = JSON.parse(stdin) as HookInput
+    const input = JSON.parse(stdin) as HookInput & { hook_event_name?: string }
+    const event = getHookEvent(input)
+
+    // Debug logging for raw hook input
+    if (config.debug) {
+      debugLog(`[${event}] Raw stdin`, input)
+    }
 
     switch (event) {
       case 'Setup':

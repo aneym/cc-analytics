@@ -51,15 +51,16 @@ export interface PostToolUseInput extends ToolUseInput {
 export interface SubagentInput {
   session_id: string
   agent_id: string
-  agent_type: string
+  agent_type?: string // Only present in SubagentStart, not SubagentStop
   prompt?: string
 }
 
-export interface SubagentStopInput extends SubagentInput {
-  duration_ms?: number
-  tool_count?: number
+export interface SubagentStopInput {
+  session_id: string
+  agent_id: string
   stop_hook_active?: boolean
   agent_transcript_path?: string
+  // Note: agent_type, duration_ms, tool_count are NOT sent by Claude Code
 }
 
 export interface PermissionRequestInput {
