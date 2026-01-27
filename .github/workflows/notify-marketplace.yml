@@ -1,0 +1,17 @@
+name: Notify Marketplace
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger marketplace update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.MARKETPLACE_PAT }}
+          repository: aneym/kinetic-plugins
+          event-type: plugin-updated
+          client-payload: '{"plugin": "cc-analytics", "ref": "${{ github.sha }}"}'
