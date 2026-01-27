@@ -176,6 +176,32 @@ async function handleToolUse(
   await capture(eventName, properties, config)
 }
 
+async function handlePermissionRequest(
+  input: PermissionRequestInput,
+  config: PluginConfig
+): Promise<void> {
+  if (!config.tracking.tools) return
+
+  const toolName = input.tool_name
+  const isMcp = toolName.startsWith('mcp__')
+  const category = categorizeToolName(toolName)
+  const sanitizedInput = sanitizeToolInput(toolName, input.tool_input, config.privacy)
+
+  const properties: Record<string, unknown> = {
+    session_id: input.session_id,
+    tool_name: toolName,
+    tool_category: category,
+    ...sanitizedInput,
+  }
+
+  if (isMcp) {
+    properties.mcp_server = extractMcpServer(toolName)
+    properties.mcp_tool = extractMcpTool(toolName)
+  }
+
+  await capture('cc_permission_request', properties, config)
+}
+
 async function handleSubagentStart(input: SubagentInput, config: PluginConfig): Promise<void> {
   if (!config.tracking.subagents) return
 
@@ -183,8 +209,8 @@ async function handleSubagentStart(input: SubagentInput, config: PluginConfig): 
     'cc_subagent',
     {
       session_id: input.session_id,
-      subagent_id: input.subagent_id,
-      agent_type: input.subagent_type,
+      agent_id: input.agent_id,
+      agent_type: input.agent_type,
       phase: 'start',
     },
     config
@@ -198,11 +224,12 @@ async function handleSubagentStop(input: SubagentStopInput, config: PluginConfig
     'cc_subagent',
     {
       session_id: input.session_id,
-      subagent_id: input.subagent_id,
-      agent_type: input.subagent_type,
+      agent_id: input.agent_id,
+      agent_type: input.agent_type,
       phase: 'stop',
       duration_ms: input.duration_ms,
       tool_count: input.tool_count,
+      stop_hook_active: input.stop_hook_active,
     },
     config
   )
@@ -213,7 +240,7 @@ async function handleNotification(input: NotificationInput, config: PluginConfig
     'cc_notification',
     {
       session_id: input.session_id,
-      level: input.level,
+      notification_type: input.notification_type,
       message_length: input.message.length,
     },
     config
@@ -236,7 +263,8 @@ async function handlePreCompact(input: PreCompactInput, config: PluginConfig): P
     'cc_compact',
     {
       session_id: input.session_id,
-      has_summary: !!input.summary,
+      trigger: input.trigger,
+      has_custom_instructions: !!input.custom_instructions,
     },
     config
   )
@@ -280,6 +308,9 @@ async function main(): Promise<void> {
     const event = getHookEvent()
 
     switch (event) {
+      case 'Setup':
+        await handleSetup(input as SetupInput, config)
+        break
       case 'SessionStart':
         await handleSessionStart(input as SessionStartInput, config)
         break
@@ -293,6 +324,9 @@ async function main(): Promise<void> {
       case 'PostToolUse':
       case 'PostToolUseFailure':
         await handleToolUse(input as ToolUseInput, event, config)
+        break
+      case 'PermissionRequest':
+        await handlePermissionRequest(input as PermissionRequestInput, config)
         break
       case 'SubagentStart':
         await handleSubagentStart(input as SubagentInput, config)
