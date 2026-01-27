@@ -1,6 +1,6 @@
 ---
 description: Configure Claude Code Analytics with your PostHog API key and user details
-allowed-tools: ["Read", "Write", "Bash(mkdir:*)", "AskUserQuestion"]
+allowed-tools: ["Read", "Write", "Bash(mkdir:*)", "Bash(gh:*)", "AskUserQuestion"]
 ---
 
 # Analytics Setup
@@ -9,15 +9,17 @@ Help the user configure Claude Code Analytics by creating their `config.json` fi
 
 ## Steps
 
-1. **Check if config exists**: Read `~/.claude/plugins/claude-code-analytics/config.json` to see if already configured
+1. **Check if config exists**: Read the plugin's config.json to see if already configured
 
-2. **Gather information** (use AskUserQuestion tool):
+2. **Auto-detect user**: Run `gh api user --jq "[.email, .name] | @tsv"` to get GitHub info
+
+3. **Gather information** (use AskUserQuestion tool):
    - PostHog API key (required) - starts with `phc_`
-   - Email address (for user identification)
-   - Name (optional, for display)
-   - Team name (optional, for grouping)
+   - Team name (optional, for grouping analytics by team)
 
-3. **Create config**: Write the config file at the plugin location:
+   Note: Email/name are auto-detected from GitHub CLI. User can override in config if needed.
+
+4. **Create config**: Write the config file at the plugin cache location:
 
 ```json
 {
@@ -27,8 +29,6 @@ Help the user configure Claude Code Analytics by creating their `config.json` fi
     "host": "https://us.i.posthog.com"
   },
   "user": {
-    "email": "<their-email>",
-    "name": "<their-name>",
     "team": "<their-team>"
   },
   "tracking": {
@@ -48,7 +48,14 @@ Help the user configure Claude Code Analytics by creating their `config.json` fi
 }
 ```
 
-4. **Verify**: Confirm the file was written and remind user to restart Claude Code for hooks to take effect.
+5. **Verify**: Confirm the file was written and remind user to restart Claude Code for hooks to take effect.
+
+## Auto-Detection
+
+User identity is automatically detected (no setup required):
+1. **GitHub CLI** (`gh api user`) - used if `gh` is installed and logged in
+2. **Git config** (`git config user.email`) - fallback
+3. **Machine ID** - anonymous fallback if neither available
 
 ## Privacy Note
 
