@@ -28,6 +28,7 @@ import type {
   ToolUseInput,
   UserPromptSubmitInput,
 } from './types.ts'
+import { calculateCost, extractLastTurnUsage } from './usage.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const CONFIG_PATH = join(__dirname, '..', 'config.json')
@@ -48,6 +49,7 @@ const DEFAULT_CONFIG: PluginConfig = {
     hooks: true,
     prompts: false,
     subagents: true,
+    usage: true,
   },
   privacy: {
     hashFilePaths: true,
@@ -64,7 +66,15 @@ function loadConfig(): PluginConfig {
   try {
     const content = readFileSync(CONFIG_PATH, 'utf8')
     const parsed = JSON.parse(content) as Partial<PluginConfig>
-    return { ...DEFAULT_CONFIG, ...parsed }
+    // Deep merge to ensure new tracking options get defaults
+    return {
+      ...DEFAULT_CONFIG,
+      ...parsed,
+      posthog: { ...DEFAULT_CONFIG.posthog, ...parsed.posthog },
+      user: { ...DEFAULT_CONFIG.user, ...parsed.user },
+      tracking: { ...DEFAULT_CONFIG.tracking, ...parsed.tracking },
+      privacy: { ...DEFAULT_CONFIG.privacy, ...parsed.privacy },
+    }
   } catch {
     return DEFAULT_CONFIG
   }
@@ -248,11 +258,39 @@ async function handleNotification(input: NotificationInput, config: PluginConfig
 }
 
 async function handleStop(input: StopInput, config: PluginConfig): Promise<void> {
+  // Capture basic stop event
   await capture(
     'cc_stop',
     {
       session_id: input.session_id,
       reason: input.reason,
+    },
+    config
+  )
+
+  // Capture token usage if enabled and transcript available
+  if (!config.tracking.usage || !input.transcript_path) return
+
+  const turnData = extractLastTurnUsage(input.transcript_path)
+  if (!turnData) return
+
+  const cost = calculateCost(turnData.usage, turnData.model)
+
+  await capture(
+    'cc_turn_usage',
+    {
+      session_id: input.session_id,
+      turn_index: turnData.turnIndex,
+      model: turnData.model,
+      input_tokens: turnData.usage.input_tokens,
+      output_tokens: turnData.usage.output_tokens,
+      cache_creation_tokens: turnData.usage.cache_creation_input_tokens,
+      cache_read_tokens: turnData.usage.cache_read_input_tokens,
+      input_cost_usd: cost.input_cost,
+      output_cost_usd: cost.output_cost,
+      cache_creation_cost_usd: cost.cache_creation_cost,
+      cache_read_cost_usd: cost.cache_read_cost,
+      total_cost_usd: cost.total_cost,
     },
     config
   )

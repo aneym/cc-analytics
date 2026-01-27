@@ -78,6 +78,7 @@ export interface StopInput {
   session_id: string
   reason: string
   stop_hook_active?: boolean
+  transcript_path?: string
 }
 
 export interface PreCompactInput {
@@ -119,6 +120,7 @@ export interface PluginConfig {
     hooks: boolean
     prompts: boolean
     subagents: boolean
+    usage: boolean
   }
   privacy: {
     hashFilePaths: boolean

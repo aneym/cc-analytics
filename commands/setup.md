@@ -1,7 +1,6 @@
 ---
-name: setup
 description: Configure Claude Code Analytics with your PostHog API key and user details
-allowed-tools: Read, Write, Bash(mkdir:*)
+allowed-tools: ["Read", "Write", "Bash(mkdir:*)", "AskUserQuestion"]
 ---
 
 # Analytics Setup
@@ -38,7 +37,8 @@ Help the user configure Claude Code Analytics by creating their `config.json` fi
     "skills": true,
     "hooks": true,
     "prompts": false,
-    "subagents": true
+    "subagents": true,
+    "usage": true
   },
   "privacy": {
     "hashFilePaths": true,

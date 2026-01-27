@@ -7,11 +7,6 @@
     "github": "aneym"
   },
   "keywords": ["analytics", "telemetry", "posthog", "usage-tracking"],
-  "hooks": "./hooks/hooks.json",
-  "skills": "./skills",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/aneym/claude-code-analytics"
-  },
+  "repository": "https://github.com/aneym/claude-code-analytics",
   "license": "MIT"
 }

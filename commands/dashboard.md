@@ -1,7 +1,6 @@
 ---
-name: dashboard
 description: View Claude Code analytics summary from local buffer
-allowed-tools: Read, Bash(jq:*), Bash(wc:*)
+allowed-tools: ["Read", "Bash(jq:*)", "Bash(wc:*)"]
 ---
 
 # Analytics Dashboard
