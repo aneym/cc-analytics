@@ -104,6 +104,7 @@ export type HookInput =
 // Plugin configuration
 export interface PluginConfig {
   enabled: boolean
+  debug?: boolean
   posthog: {
     apiKey: string
     host: string

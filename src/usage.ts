@@ -48,8 +48,15 @@ export function extractLastTurnUsage(transcriptPath: string): TurnUsageData | nu
     const content = readFileSync(transcriptPath, 'utf8')
     const lines = content.trim().split('\n')
 
-    let lastAssistantEntry: TranscriptEntry | null = null
+    // Accumulate tokens across ALL assistant entries
+    const totalUsage: TokenUsage = {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+    }
     let turnIndex = 0
+    let lastModel = 'unknown'
 
     for (const line of lines) {
       if (!line.trim()) continue
@@ -57,29 +64,31 @@ export function extractLastTurnUsage(transcriptPath: string): TurnUsageData | nu
       try {
         const entry = JSON.parse(line) as TranscriptEntry
 
-        // Count assistant messages (each is a turn)
+        // Accumulate usage from all assistant messages
         if (entry.type === 'assistant' && entry.message?.usage) {
           turnIndex++
-          lastAssistantEntry = entry
+          const usage = entry.message.usage
+          totalUsage.input_tokens += usage.input_tokens ?? 0
+          totalUsage.output_tokens += usage.output_tokens ?? 0
+          totalUsage.cache_creation_input_tokens += usage.cache_creation_input_tokens ?? 0
+          totalUsage.cache_read_input_tokens += usage.cache_read_input_tokens ?? 0
+
+          // Keep track of the last model used
+          if (entry.message.model) {
+            lastModel = entry.message.model
+          }
         }
       } catch {}
     }
 
-    if (!lastAssistantEntry?.message?.usage) {
+    // Return null if no assistant entries found
+    if (turnIndex === 0) {
       return null
     }
 
-    const msg = lastAssistantEntry.message
-    const usage = msg.usage!
-
     return {
-      usage: {
-        input_tokens: usage.input_tokens ?? 0,
-        output_tokens: usage.output_tokens ?? 0,
-        cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-        cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-      },
-      model: msg.model ?? 'unknown',
+      usage: totalUsage,
+      model: lastModel,
       turnIndex,
     }
   } catch {

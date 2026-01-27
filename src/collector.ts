@@ -2,6 +2,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { debugLog } from './debug.ts'
 import { capture } from './posthog.ts'
 import {
   categorizeIntent,
@@ -35,6 +36,7 @@ const CONFIG_PATH = join(__dirname, '..', 'config.json')
 
 const DEFAULT_CONFIG: PluginConfig = {
   enabled: false,
+  debug: false,
   posthog: {
     apiKey: '',
     host: 'https://us.i.posthog.com',
@@ -70,6 +72,7 @@ function loadConfig(): PluginConfig {
     return {
       ...DEFAULT_CONFIG,
       ...parsed,
+      debug: parsed.debug ?? DEFAULT_CONFIG.debug,
       posthog: { ...DEFAULT_CONFIG.posthog, ...parsed.posthog },
       user: { ...DEFAULT_CONFIG.user, ...parsed.user },
       tracking: { ...DEFAULT_CONFIG.tracking, ...parsed.tracking },
@@ -258,11 +261,14 @@ async function handleNotification(input: NotificationInput, config: PluginConfig
 }
 
 async function handleStop(input: StopInput, config: PluginConfig): Promise<void> {
+  // Handle missing session_id gracefully
+  const sessionId = input.session_id || 'unknown'
+
   // Capture basic stop event
   await capture(
     'cc_stop',
     {
-      session_id: input.session_id,
+      session_id: sessionId,
       reason: input.reason,
     },
     config
@@ -279,7 +285,7 @@ async function handleStop(input: StopInput, config: PluginConfig): Promise<void>
   await capture(
     'cc_turn_usage',
     {
-      session_id: input.session_id,
+      session_id: sessionId,
       turn_index: turnData.turnIndex,
       model: turnData.model,
       input_tokens: turnData.usage.input_tokens,
@@ -338,12 +344,18 @@ async function main(): Promise<void> {
 
   try {
     const stdin = await readStdin()
+    const event = getHookEvent()
+
+    // Debug logging for raw hook input
+    if (config.debug) {
+      debugLog(`[${event}] Raw stdin`, stdin.trim() ? JSON.parse(stdin) : '(empty)')
+    }
+
     if (!stdin.trim()) {
       process.exit(0)
     }
 
     const input = JSON.parse(stdin) as HookInput
-    const event = getHookEvent()
 
     switch (event) {
       case 'Setup':
