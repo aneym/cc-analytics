@@ -1,6 +1,6 @@
 {
   "name": "cc-analytics",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Track Claude Code usage: tools, hooks, skills, sessions. Sends to PostHog for team-wide analytics.",
   "author": {
     "name": "aneym",
